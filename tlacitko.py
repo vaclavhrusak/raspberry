@@ -1,61 +1,7 @@
 import machine
 import time
-klik=0
 button = machine.Pin(8,machine.Pin.IN,machine.Pin.PULL_DOWN)
-led1 = machine.Pin(0,machine.Pin.OUT)
-led2 = machine.Pin(1,machine.Pin.OUT)
-led3 = machine.Pin(2,machine.Pin.OUT)
-led4 = machine.Pin(3,machine.Pin.OUT)
-led5 = machine.Pin(4,machine.Pin.OUT)
-led6 = machine.Pin(5,machine.Pin.OUT)
-led7 = machine.Pin(7,machine.Pin.OUT)
-led8 = machine.Pin(6,machine.Pin.OUT)
-while(True):
-    if button.value() ==1:
-        klik=klik+1
-    if klik== 1:
-        led1(True)
-        led2(True)
-        led3(True)
-        led4(True)
-        led5(True)
-        led6(True)
-        led7(True)
-        led8(True)
-        time.sleep(0.2)
-        led1(False)
-        led2(False)
-        led3(False)
-        led4(False)
-        led5(False)
-        led6(False)
-        led7(False)
-        led8(False)
-    elif klik== 2:
-        led1(True)
-        time.sleep(0.5)
-        led2(True)
-        time.sleep(1)
-        led3(True)
-        time.sleep(1.5)
-        led4(True)
-        time.sleep(2)
-        led5(True)
-        time.sleep(2.5)
-        led6(True)
-        time.sleep(3)
-        led7(True)
-        time.sleep(3.5)
-        led8(True)
-        time.sleep(3)
-        led1(False)
-        led2(False)
-        led3(False)
-        led4(False)
-        led5(False)
-        led6(False)
-        led7(False)
-        led8(False)
-
-
-    
+ledky = []
+for i in range(7):
+    ledky.append(machine.Pin(i).OUT)
+    def blikacky():
