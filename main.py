@@ -1,46 +1,66 @@
-import dht
+import socket
 import machine
-import time
+import wlan  # import vlastního modulu wlan.py
 
-# Inicializace pinu, na který je připojeno DHT čidlo (v tomto případě GP0)
-dht_pin = machine.Pin(1)  # GPIO0 (vstupní pin pro DHT čidlo)
-sensor = dht.DHT11(dht_pin)  # Používáme DHT11 čidlo
-Led1 = machine.Pin(2, machine.Pin.OUT )
-Led2 = machine.Pin(3, machine.Pin.OUT)
-Led3 = machine.Pin(4, machine.Pin.OUT)
-Led4 = machine.Pin(5, machine.Pin.OUT)
-while True:
-    try:
-        # Čtení teploty a vlhkosti
-        sensor.measure()  # Vykonání měření
-        temperature = sensor.temperature()  # Teplota v °C
+SSID = "Samsung S21 Ultra"
+PASSWORD = "Vojta123"
 
-        # Výpis na konzoli
-        print('Teplota: {}°C'.format(temperature))
-        if temperature <22:
-            Led1(True)
-            Led2(False)
-            Led3(False)
-            Led4(False)
-        elif temperature <23:
-            Led1(True)
-            Led2(True)
-            Led3(False)
-            Led4(False)
-        elif temperature <27:
-            Led1(True)
-            Led2(True)
-            Led3(True)
-            Led4(False)
-        elif temperature <30:
-            Led1(True)
-            Led2(True)
-            Led3(True)
-            Led4(True)
+led = machine.Pin("LED", machine.Pin.OUT)
+
+my_state = False
+led_state = "OFF"
+
+def main():
+    global my_state, led_state  # DŮLEŽITÉ DOPSAT
+
+    # Připojení k Wi-Fi
+    mywlan = wlan.connect_to_wifi(SSID, PASSWORD)
+    ip = mywlan.ifconfig()[0]
+
+    addr = socket.getaddrinfo(ip, 80)[0][-1]
+    s = socket.socket()
+    s.bind(addr)
+    s.listen(1)
     
-    except OSError as e:
-        print('Chyba při čtení z DHT čidla:', e)
+    print(f"Web server běží na http://{ip}:80/")
 
-    time.sleep(0.2)  # Počkej 2 sekundy před dalším měřením
+    while True:
+        cl, addr = s.accept()
+        print("Klient se připojil z IP:", addr)
 
-    
+        request = cl.recv(2048)
+        if not request:
+            cl.close()
+            continue
+
+        request_str = request.decode("utf-8")
+        print("Požadavek:", request_str)
+
+        lines = request_str.split("\r\n")
+        request_line = lines[0].split()
+        if len(request_line) < 2:
+            cl.close()
+            continue
+        method = request_line[0]
+        path = request_line[1]
+
+        if method == "POST" and path == "/":
+            if "action=on" in request_str:
+                my_state = True
+                led_state = "ON"
+                led.value(1)
+            elif "action=off" in request_str:
+                my_state = False
+                led_state = "OFF"
+                led.value(0)
+
+        response_body = wlan.get_html(led_state)
+        response = (
+            "HTTP/1.0 200 OK\r\n"
+            "Content-Type: text/html; charset=utf-8\r\n\r\n"
+            + response_body
+        )
+        cl.sendall(response)
+        cl.close()
+        
+main()
